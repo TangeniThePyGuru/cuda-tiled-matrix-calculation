@@ -69,7 +69,7 @@
 }
 
 int main(int argc, char **argv) {
-  wbArg_t args;
+  // wbArg_t args;
   float *hostA; // The A matrix
   float *hostB; // The B matrix
   float *hostC; // The output C matrix
@@ -83,29 +83,61 @@ int main(int argc, char **argv) {
   int numCRows;    // number of rows in the matrix C (you have to set this)
   int numCColumns; // number of columns in the matrix C (you have to set
                    // this)
-  
+  size_t A_sz, B_sz, C_sz;
+
   unsigned const int TILE_WIDTH = 16;
 
   Timer timer;
   // cudaError_t cuda_ret;
 
-  args = wbArg_read(argc, argv);
+  // args = wbArg_read(argc, argv);
 
   // Initialize host variables ----------------------------------------------
 
-  printf("\nImporting data and creating memory on host..."); fflush(stdout);
+  printf("\nInitializing host variables and creating memory on host..."); fflush(stdout);
   startTime(&timer);
-  //wbTime_start(Generic, "Importing data and creating memory on host");
-  hostA = (float *)wbImport(wbArg_getInputFile(args, 0), &numARows,
-                            &numAColumns);
-  hostB = (float *)wbImport(wbArg_getInputFile(args, 1), &numBRows,
-                            &numBColumns);
+
+
+  if (argc == 1) {
+      numARows = 1000;
+      numAColumns = numBRows = 1000;
+      numBColumns = 1000;
+  } else if (argc == 2) {
+      numARows = atoi(argv[1]);
+      numAColumns = numBRows = atoi(argv[1]);
+      numBColumns = atoi(argv[1]);
+  } else if (argc == 4) {
+      numARows = atoi(argv[1]);
+      numAColumns = numBRows = atoi(argv[2]);
+      numBColumns = atoi(argv[3]);
+  } else {
+      printf("\n    Invalid input parameters!"
+          "\n    Usage: ./lab3                # All matrices are 1000 x 1000"
+          "\n    Usage: ./lab3 <m>            # All matrices are m x m"
+          "\n    Usage: ./lab3 <m> <k> <n>    # A: m x k, B: k x n, C: m x n"
+          "\n");
+      exit(0);
+  }    
+
                             
   //@@ Set numCRows and numCColumns (to something other than 0, obviously)
   numCRows = numARows;
   numCColumns = numBColumns;
-  //@@ Allocate the hostC matrix
-  hostC = (float*) malloc( sizeof(float)*(numCColumns*numCRows) );
+
+  // set the matrix size variables
+  A_sz = numARows*numAColumns;
+  B_sz = numBRows*numBColumns;
+  C_sz = numARows*numBColumns;
+
+  //@@ Allocate CPU memory and assign data
+
+  hostA = (float*) malloc( sizeof(float)*A_sz );
+  for (unsigned int i=0; i < A_sz; i++) { hostA[i] = (rand()%100)/100.00; }
+
+  hostB = (float*) malloc( sizeof(float)*B_sz );
+  for (unsigned int i=0; i < B_sz; i++) { hostB[i] = (rand()%100)/100.00; }
+
+  hostC = (float*) malloc( sizeof(float)*C_sz );
 
   stopTime(&timer); printf("%f s\n", elapsedTime(timer));
   //wbTime_stop(Generic, "Importing data and creating memory on host");
@@ -118,9 +150,9 @@ int main(int argc, char **argv) {
   //wbTime_start(GPU, "Allocating GPU memory.");
   
   //@@ Allocate GPU memory here
-  cudaMallocManaged((void **)&deviceA, sizeof(float )*(numAColumns*numARows));
-  cudaMallocManaged((void **)&deviceB, sizeof(float )*(numBColumns*numBRows));
-  cudaMallocManaged((void **)&deviceC, sizeof(float )*(numCColumns*numCRows));
+  cudaMallocManaged((void **)&deviceA, sizeof(float )*A_sz);
+  cudaMallocManaged((void **)&deviceB, sizeof(float )*B_sz);
+  cudaMallocManaged((void **)&deviceC, sizeof(float )*C_sz);
 
   stopTime(&timer); printf("%f s\n", elapsedTime(timer));
   //wbTime_stop(GPU, "Allocating GPU memory.");
@@ -130,8 +162,8 @@ int main(int argc, char **argv) {
   //wbTime_start(GPU, "Copying input memory to the GPU.");
   
   //@@ Copy memory to the GPU here
-  wbCheck(cudaMemcpy(deviceA, hostA, sizeof(float )*(numAColumns*numARows), cudaMemcpyHostToDevice));
-  wbCheck(cudaMemcpy(deviceB, hostB, sizeof(float )*(numBColumns*numBRows), cudaMemcpyHostToDevice));
+  wbCheck(cudaMemcpy(deviceA, hostA, sizeof(float )*A_sz, cudaMemcpyHostToDevice));
+  wbCheck(cudaMemcpy(deviceB, hostB, sizeof(float )*B_sz, cudaMemcpyHostToDevice));
   
 
   stopTime(&timer); printf("%f s\n", elapsedTime(timer));
@@ -158,7 +190,7 @@ int main(int argc, char **argv) {
   //wbTime_start(Copy, "Copying output memory to the CPU");
   
   //@@ Copy the GPU memory back to the CPU here
-  wbCheck(cudaMemcpy(hostC, deviceC, sizeof(float)*(numCRows*numCColumns), cudaMemcpyDeviceToHost));
+  wbCheck(cudaMemcpy(hostC, deviceC, sizeof(float)*C_sz, cudaMemcpyDeviceToHost));
 
   stopTime(&timer); printf("%f s\n", elapsedTime(timer));
   //wbTime_stop(Copy, "Copying output memory to the CPU");
