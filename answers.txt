@@ -1,0 +1,12 @@
+Git URL: https://github.com/emu-computer-science/cosc612-lab3-tiledmult-TangeniThePyGuru
+Matheus Tangeni Shikomba
+
+1. The floating-point operations bieng performed will be (2 x numAColumns), e.g. if matrix A has 64 columns, the floating-point operations will be 128 times
+
+2. The global memory reads will be (numAColumns/16) e.g. if matrix A has 64 columns, the global memory reads will be 64/TILE_WIDTH 
+   The global memory writes wil be (numCColumns/TILE_WIDTH) * (numCRows/TILE_WIDTH). e.g. if matrix C has 64 x 64. the total memory writes will be 8
+
+3. (D) 1024
+4. (A) 1/8
+5. 
+6.
