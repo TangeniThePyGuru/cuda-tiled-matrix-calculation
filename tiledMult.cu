@@ -208,7 +208,8 @@ int main(int argc, char **argv) {
   //wbTime_stop(GPU, "Freeing GPU Memory");
 
   //Determine if output is correct and print result.
-  wbSolution(args, hostC, numCRows, numCColumns);
+  // wbSolution(args, hostC, numCRows, numCColumns);
+  verify(A_h, B_h, C_h, matArow, matAcol, matBcol);
 
   free(hostA);
   free(hostB);
